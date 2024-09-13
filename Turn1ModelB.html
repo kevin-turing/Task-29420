@@ -1,1 +1,118 @@
-T1MB
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grocery Industry Visualizations</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <style>
+        .chart-container {
+            width: 100%;
+            height: 400px;
+        }
+    </style>
+    <div class="container mt-5">
+        <h1 class="text-center">Grocery Industry Trends</h1>
+        <!-- Time Series Graph -->
+        <div id="timeSeriesGraph" class="mb-5"></div>
+        
+        <!-- Pie Chart -->
+        <div id="pieChart" class="mb-5"></div>
+        
+        <!-- Bar Chart -->
+        <div id="barChart"></div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', (event) => {
+    const ctxTimeSeries = document.getElementById('timeSeriesGraph').getContext('2d');
+    const ctxPie = document.getElementById('pieChart').getContext('2d');
+    const ctxBar = document.getElementById('barChart').getContext('2d');
+
+    // Time Series Data for Convenience Value
+    new Chart(ctxTimeSeries, {
+        type: 'line',
+        data: {
+            labels: ['Past', 'Now'],
+            datasets: [{
+                label: 'Consumers Valuing Convenience',
+                data: [null, 52], // Assuming 'Past' data is not provided, hence null
+                borderColor: 'rgba(75, 192, 192, 1)',
+                fill: false
+            }]
+        },
+        options: {
+            responsive: true,
+            title: {
+                display: true,
+                text: 'Rise in Consumers Valuing Convenience'
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    title: {
+                        display: true,
+                        text: 'Percentage'
+                    }
+                }
+            }
+        }
+    });
+
+    // Pie Chart for Convenience Seekers
+    new Chart(ctxPie, {
+        type: 'pie',
+        data: {
+            labels: ['Convenience Seekers', 'Others'],
+            datasets: [{
+                data: [23, 77], // 23% are convenience seekers
+                backgroundColor: ['#FF6384', '#36A2EB']
+            }]
+        },
+        options: {
+            responsive: true,
+            title: {
+                display: true,
+                text: 'Distribution of Convenience Seekers'
+            }
+        }
+    });
+
+    // Bar Chart for Grocers' Strategic Investments
+    // Note: The article does not provide specific data for this, so we'll use hypothetical data
+    new Chart(ctxBar, {
+        type: 'bar',
+        data: {
+            labels: ['Convenience', 'Quality', 'Low Prices', 'Sustainability'],
+            datasets: [{
+                label: 'Investment Focus',
+                data: [85, 70, 60, 50], // Hypothetical percentages
+                backgroundColor: 'rgba(54, 162, 235, 0.5)'
+            }]
+        },
+        options: {
+            responsive: true,
+            title: {
+                display: true,
+                text: "Grocers' Strategic Investment Focus"
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Investment Percentage'
+                    }
+                }
+            }
+        }
+    });
+});
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</body>
+</html>
