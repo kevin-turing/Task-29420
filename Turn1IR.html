@@ -3,122 +3,351 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Grocery Industry Trends</title>
+    <title>Super Reaction Time Game</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Roboto', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
             margin: 0;
-            padding: 20px;
             background-color: #f0f0f0;
+            transition: background-color 0.3s ease;
         }
-        .chart-container {
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-            padding: 20px;
+        #game-container {
+            text-align: center;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            max-width: 600px;
+            width: 90%;
         }
         h1, h2 {
             color: #333;
+            margin-bottom: 20px;
+        }
+        #letter-display {
+            font-size: 96px;
+            margin: 30px 0;
+            font-weight: bold;
+            color: #4a4a4a;
+        }
+        .menu-button {
+            padding: 12px 24px;
+            margin: 8px;
+            font-size: 18px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+        .menu-button:hover {
+            background-color: #45a049;
+        }
+        .powerup {
+            display: inline-block;
+            padding: 8px 16px;
+            margin: 8px;
+            background-color: #ffd700;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: transform 0.1s ease;
+        }
+        .powerup:hover {
+            transform: scale(1.05);
+        }
+        .colorblind {
+            filter: grayscale(100%) brightness(120%);
+        }
+        #game-info, #stats-info {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .info-box {
+            background-color: #e0e0e0;
+            padding: 10px;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        #players-info {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+        }
+        .player-box {
+            background-color: #e0e0e0;
+            padding: 10px;
+            border-radius: 5px;
+            font-weight: bold;
+            flex: 1;
+            margin: 0 5px;
+        }
+        .active-player {
+            border: 2px solid #4CAF50;
+        }
+        #input-display {
+            font-size: 48px;
+            margin: 20px 0;
+            color: #666;
+        }
+        #difficulty-display {
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: #666;
         }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-    <h1>Grocery Industry Trends</h1>
-
-    <div class="chart-container">
-        <h2>Rise in Consumers Valuing Convenience</h2>
-        <canvas id="convenienceChart"></canvas>
-    </div>
-
-    <div class="chart-container">
-        <h2>Distribution of Food Personalities</h2>
-        <canvas id="foodPersonalitiesChart"></canvas>
-    </div>
-
-    <div class="chart-container">
-        <h2>Grocers' Strategic Investments</h2>
-        <canvas id="investmentsChart"></canvas>
+    <div id="game-container">
+        <div id="main-menu">
+            <h1>Super Reaction Time Game</h1>
+            <button class="menu-button" onclick="startGame('easy')">Easy</button>
+            <button class="menu-button" onclick="startGame('medium')">Medium</button>
+            <button class="menu-button" onclick="startGame('hard')">Hard</button>
+            <button class="menu-button" onclick="startTwoPlayerGame()">Two Player</button>
+            <button class="menu-button" onclick="toggleColorblindMode()">Toggle Colorblind Mode</button>
+        </div>
+        <div id="game-screen" style="display: none;">
+            <div id="difficulty-display"></div>
+            <div id="letter-display"></div>
+            <div id="input-display"></div>
+            <div id="game-info">
+                <div id="score" class="info-box">Score: 0</div>
+                <div id="level" class="info-box">Level: 1</div>
+                <div id="timer" class="info-box">Time: 1.5s</div>
+            </div>
+            <div id="stats-info">
+                <div id="accuracy" class="info-box">Accuracy: 0%</div>
+                <div id="avg-reaction-time" class="info-box">Avg Time: 0ms</div>
+                <div id="highest-score" class="info-box">Best: 0</div>
+            </div>
+            <div id="powerups"></div>
+            <div id="players-info" style="display: none;">
+                <div id="player1" class="player-box">Player 1: 0</div>
+                <div id="player2" class="player-box">Player 2: 0</div>
+            </div>
+            <button class="menu-button" onclick="showMainMenu()">Back to Menu</button>
+        </div>
     </div>
 
     <script>
-        // Convenience Value Chart
-        new Chart(document.getElementById('convenienceChart'), {
-            type: 'line',
-            data: {
-                labels: ['Past', 'Present'],
-                datasets: [{
-                    label: 'Consumers Valuing Convenience More',
-                    data: [0, 52],
-                    borderColor: 'rgb(75, 192, 192)',
-                    tension: 0.1
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        max: 100,
-                        title: {
-                            display: true,
-                            text: 'Percentage (%)'
-                        }
-                    }
-                }
-            }
-        });
+        let currentDifficulty = 'easy';
+        let score = 0;
+        let level = 1;
+        let currentLetter = '';
+        let inputLetter = '';
+        let timeLeft = 1500;
+        let gameInterval;
+        let powerupTimeout;
+        let isColorblindMode = false;
+        let totalAttempts = 0;
+        let correctAttempts = 0;
+        let totalReactionTime = 0;
+        let isMultiplayer = false;
+        let currentPlayer = 1;
+        let player1Score = 0;
+        let player2Score = 0;
+        let highestScore = 0;
 
-        // Food Personalities Chart
-        new Chart(document.getElementById('foodPersonalitiesChart'), {
-            type: 'pie',
-            data: {
-                labels: ['Convenience Seekers', 'Others'],
-                datasets: [{
-                    data: [23, 77],
-                    backgroundColor: ['rgb(255, 99, 132)', 'rgb(54, 162, 235)']
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        position: 'top',
-                    },
-                    title: {
-                        display: true,
-                        text: 'Food Personalities Distribution'
-                    }
-                }
-            }
-        });
+        const difficulties = {
+            easy: { time: 1500, letters: 1 },
+            medium: { time: 1000, letters: 1 },
+            hard: { time: 2500, letters: 2 }
+        };
 
-        // Strategic Investments Chart
-        new Chart(document.getElementById('investmentsChart'), {
-            type: 'bar',
-            data: {
-                labels: ['Increasing Convenience', 'Competing on Convenience', 'Convenience as Purchase Driver', 'Valuing Convenience More', 'Convenience in Overall Strategy'],
-                datasets: [{
-                    label: 'Percentage of Executives Agreeing',
-                    data: [85, 84, 83, 81, 77],
-                    backgroundColor: 'rgba(75, 192, 192, 0.6)'
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        max: 100,
-                        title: {
-                            display: true,
-                            text: 'Percentage (%)'
-                        }
+        function startGame(difficulty) {
+            currentDifficulty = difficulty;
+            resetGame();
+            document.getElementById('main-menu').style.display = 'none';
+            document.getElementById('game-screen').style.display = 'block';
+            document.getElementById('players-info').style.display = 'none';
+            document.getElementById('difficulty-display').textContent = `Difficulty: ${difficulty.charAt(0).toUpperCase() + difficulty.slice(1)}`;
+            newRound();
+        }
+
+        function startTwoPlayerGame() {
+            isMultiplayer = true;
+            startGame('medium');
+            document.getElementById('players-info').style.display = 'flex';
+            updatePlayerInfo();
+        }
+
+        function resetGame() {
+            score = 0;
+            level = 1;
+            totalAttempts = 0;
+            correctAttempts = 0;
+            totalReactionTime = 0;
+            player1Score = 0;
+            player2Score = 0;
+            currentPlayer = 1;
+            inputLetter = '';
+            updateScore();
+            updateLevel();
+            updateStats();
+        }
+
+        function newRound() {
+            clearInterval(gameInterval);
+            clearTimeout(powerupTimeout);
+            generateLetter();
+            inputLetter = '';
+            updateInputDisplay();
+            timeLeft = difficulties[currentDifficulty].time;
+            updateTimer();
+            gameInterval = setInterval(updateTimer, 100);
+            if (Math.random() < 0.2) spawnPowerup();
+        }
+
+        function generateLetter() {
+            const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            currentLetter = '';
+            for (let i = 0; i < difficulties[currentDifficulty].letters; i++) {
+                currentLetter += letters[Math.floor(Math.random() * letters.length)];
+            }
+            document.getElementById('letter-display').textContent = currentLetter;
+        }
+
+        function updateTimer() {
+            timeLeft -= 100;
+            document.getElementById('timer').textContent = `Time: ${(timeLeft / 1000).toFixed(1)}s`;
+            if (timeLeft <= 0) {
+                clearInterval(gameInterval);
+                handleIncorrectInput();
+            }
+        }
+
+        function handleKeyPress(event) {
+            const input = event.key.toUpperCase();
+            if (/^[A-Z]$/.test(input)) {
+                inputLetter += input;
+                updateInputDisplay();
+                if (inputLetter.length === currentLetter.length) {
+                    totalAttempts++;
+                    if (inputLetter === currentLetter) {
+                        handleCorrectInput();
+                    } else {
+                        handleIncorrectInput();
                     }
                 }
             }
-        });
+        }
+
+        function updateInputDisplay() {
+            document.getElementById('input-display').textContent = inputLetter;
+        }
+
+        function handleCorrectInput() {
+            correctAttempts++;
+            const reactionTime = difficulties[currentDifficulty].time - timeLeft;
+            totalReactionTime += reactionTime;
+            score += currentDifficulty === 'hard' ? 2 : 1;
+            updateScore();
+            updateStats();
+            if (score % 10 === 0) levelUp();
+            document.body.style.backgroundColor = isColorblindMode ? '#808080' : '#90EE90';
+            setTimeout(() => document.body.style.backgroundColor = '#f0f0f0', 300);
+            if (isMultiplayer) switchPlayer();
+            newRound();
+        }
+
+        function handleIncorrectInput() {
+            document.body.style.backgroundColor = isColorblindMode ? '#404040' : '#FFB6C1';
+            setTimeout(() => document.body.style.backgroundColor = '#f0f0f0', 300);
+            updateStats();
+            if (isMultiplayer) switchPlayer();
+            newRound();
+        }
+
+        function updateScore() {
+            if (isMultiplayer) {
+                if (currentPlayer === 1) {
+                    player1Score = score;
+                } else {
+                    player2Score = score;
+                }
+                document.getElementById('score').textContent = `Total: ${player1Score + player2Score}`;
+                updatePlayerInfo();
+            } else {
+                document.getElementById('score').textContent = `Score: ${score}`;
+            }
+            highestScore = Math.max(highestScore, score, player1Score, player2Score);
+            document.getElementById('highest-score').textContent = `Best: ${highestScore}`;
+        }
+
+        function updateLevel() {
+            document.getElementById('level').textContent = `Level: ${level}`;
+        }
+
+        function updatePlayerInfo() {
+            document.getElementById('player1').textContent = `Player 1: ${player1Score}`;
+            document.getElementById('player2').textContent = `Player 2: ${player2Score}`;
+            document.getElementById('player1').classList.toggle('active-player', currentPlayer === 1);
+            document.getElementById('player2').classList.toggle('active-player', currentPlayer === 2);
+        }
+
+        function switchPlayer() {
+            currentPlayer = currentPlayer === 1 ? 2 : 1;
+            score = currentPlayer === 1 ? player1Score : player2Score;
+            updatePlayerInfo();
+        }
+
+        function levelUp() {
+            level++;
+            updateLevel();
+            if (currentDifficulty === 'easy' && level === 3) currentDifficulty = 'medium';
+            if (currentDifficulty === 'medium' && level === 6) currentDifficulty = 'hard';
+            document.getElementById('difficulty-display').textContent = `Difficulty: ${currentDifficulty.charAt(0).toUpperCase() + currentDifficulty.slice(1)}`;
+        }
+
+        function spawnPowerup() {
+            const powerups = ['Slow Time', '2x Points', 'Skip Letter'];
+            const powerup = powerups[Math.floor(Math.random() * powerups.length)];
+            const powerupElement = document.createElement('div');
+            powerupElement.className = 'powerup';
+            powerupElement.textContent = powerup;
+            powerupElement.onclick = () => activatePowerup(powerup);
+            document.getElementById('powerups').appendChild(powerupElement);
+            powerupTimeout = setTimeout(() => powerupElement.remove(), 3000);
+        }
+
+        function activatePowerup(powerup) {
+            if (powerup === 'Slow Time') {
+                timeLeft += 1000;
+            } else if (powerup === '2x Points') {
+                score *= 2;
+                updateScore();
+            } else if (powerup === 'Skip Letter') {
+                newRound();
+            }
+            document.querySelector('.powerup').remove();
+        }
+
+        function toggleColorblindMode() {
+            isColorblindMode = !isColorblindMode;
+            document.body.classList.toggle('colorblind');
+        }
+
+        function updateStats() {
+            const accuracy = (correctAttempts / totalAttempts * 100 || 0).toFixed(2);
+            const avgReactionTime = (totalReactionTime / correctAttempts || 0).toFixed(2);
+            document.getElementById('accuracy').textContent = `Accuracy: ${accuracy}%`;
+            document.getElementById('avg-reaction-time').textContent = `Avg Time: ${avgReactionTime}ms`;
+        }
+
+        function showMainMenu() {
+            document.getElementById('main-menu').style.display = 'block';
+            document.getElementById('game-screen').style.display = 'none';
+        }
+
+        document.addEventListener('keypress', handleKeyPress);
     </script>
 </body>
 </html>

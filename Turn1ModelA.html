@@ -1,122 +1,154 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Consumer Convenience Trend</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reaction Time Game</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+<style>
+body {
+    font-family: 'Arial', sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    background-color: #f0f0f0;
+    transition: background-color 0.3s;
+}
+
+#game-container {
+    text-align: center;
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+#letter-display {
+    font-size: 5em;
+    margin: 20px 0;
+}
+
+#score, #level, #timer {
+    font-size: 1.2em;
+    margin: 10px 0;
+}
+
+button {
+    padding: 10px 20px;
+    margin: 5px;
+    font-size: 1em;
+    cursor: pointer;
+}
+
+.colorblind {
+    filter: grayscale(100%);
+}
+
+.powerup {
+    position: absolute;
+    font-size: 2em;
+    cursor: pointer;
+}
+
+/* Add more styles for different elements and states */
+</style>
 </head>
 <body>
-    <div style="width:80%;">
-        <canvas id="convenienceTrend"></canvas>
+<div id="game-container">
+    <div id="menu">
+        <button onclick="startGame('easy')">Easy</button>
+        <button onclick="startGame('medium')">Medium</button>
+        <button onclick="startGame('hard')">Hard</button>
+        <button onclick="toggleColorblind()">Colorblind Mode</button>
     </div>
-
-    <script>
-    const ctx = document.getElementById('convenienceTrend').getContext('2d');
-    const myChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: ['Past', 'Now'],
-            datasets: [{
-                label: 'Consumers Valuing Convenience',
-                data: [null, 52], // Assuming there was no data for the past, hence null
-                backgroundColor: [
-                    'rgba(54, 162, 235, 0.2)',
-                ],
-                borderColor: [
-                    'rgba(54, 162, 235, 1)',
-                ],
-                borderWidth: 1
-            }]
-        },
-        options: {
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    max: 100,
-                    title: {
-                        display: true,
-                        text: '% of Consumers'
-                    }
-                }
-            }
-        }
-    });
-    </script>
-
-<div style="width:50%;">
-  <canvas id="convenienceSeekers"></canvas>
+    <div id="game" style="display:none;">
+        <div id="letter-display"></div>
+        <div id="score">Score: 0</div>
+        <div id="level">Level: 1</div>
+        <div id="timer">Time: 1.5s</div>
+        <div id="powerups"></div>
+    </div>
+    <div id="stats" style="display:none;"></div>
 </div>
 
 <script>
-const ctx1 = document.getElementById('convenienceSeekers').getContext('2d');
-const pieChart = new Chart(ctx1, {
-  type: 'pie',
-  data: {
-      labels: ['Convenience Seekers', 'Others'],
-      datasets: [{
-          data: [23, 77],
-          backgroundColor: [
-              'rgb(255, 99, 132)',
-              'rgb(75, 192, 192)',
-          ],
-      }]
-  },
-  options: {
-      responsive: true,
-      plugins: {
-          legend: {
-              position: 'top',
-          },
-          title: {
-              display: true,
-              text: 'Distribution of Food Personalities'
-          }
-      }
-  }
-});
+let score = 0, level = 1, timeLeft = 1.5, isColorblind = false;
+let currentLetter = '', intervalId, timeoutId;
+
+function startGame(difficulty) {
+    document.getElementById('menu').style.display = 'none';
+    document.getElementById('game').style.display = 'block';
+    resetGame();
+    switch(difficulty) {
+        case 'hard': timeLeft = 2.5; break;
+        default: timeLeft = 1.5; 
+    }
+    generateLetter();
+    startTimer();
+}
+
+function generateLetter() {
+    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    currentLetter = letters[Math.floor(Math.random() * letters.length)];
+    if(level > 2) currentLetter += letters[Math.floor(Math.random() * letters.length)]; // For hard mode
+    document.getElementById('letter-display').innerText = currentLetter;
+}
+
+function checkLetter(key) {
+    if(key.toUpperCase() === currentLetter) {
+        document.body.style.backgroundColor = 'green';
+        updateScore();
+    } else {
+        document.body.style.backgroundColor = 'red';
+    }
+    clearTimeout(timeoutId);
+    setTimeout(() => document.body.style.backgroundColor = '', 300);
+    generateLetter();
+    startTimer();
+}
+
+function startTimer() {
+    document.getElementById('timer').innerText = `Time: ${timeLeft}s`;
+    let time = timeLeft * 1000;
+    intervalId = setInterval(() => {
+        time -= 100;
+        document.getElementById('timer').innerText = `Time: ${(time/1000).toFixed(1)}s`;
+    }, 100);
+    timeoutId = setTimeout(() => {
+        clearInterval(intervalId);
+        generateLetter();
+        startTimer();
+    }, time);
+}
+
+function updateScore() {
+    score += 1;
+    document.getElementById('score').innerText = `Score: ${score}`;
+    if(score % 10 === 0) levelUp();
+}
+
+function levelUp() {
+    level++;
+    document.getElementById('level').innerText = `Level: ${level}`;
+    // Here you can increase difficulty or introduce new elements
+}
+
+function toggleColorblind() {
+    document.body.classList.toggle('colorblind');
+    isColorblind = !isColorblind;
+}
+
+document.addEventListener('keydown', (event) => checkLetter(event.key));
+
+// Placeholder for power-ups and two-player mode implementation
+function spawnPowerup() {
+    // Logic to spawn power-ups
+}
+
+// Start with the menu visible
+document.getElementById('menu').style.display = 'block';
 </script>
-
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Grocers' Strategic Investments</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-</head>
-<body>
-    <div style="width:80%;">
-        <canvas id="strategicInvestments"></canvas>
-    </div>
-
-    <script>
-    const ctx3 = document.getElementById('strategicInvestments').getContext('2d');
-    const barChart = new Chart(ctx3, {
-        type: 'bar',
-        data: {
-            labels: ['Increase Convenience', 'Competing on Convenience', 'Convenience as Purchase Driver', 'Value Convenience More', 'Convenience in Overall Strategy'],
-            datasets: [{
-                label: '% of Grocers Agreeing',
-                data: [85, 84, 83, 81, 77],
-                backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                borderColor: 'rgba(75, 192, 192, 1)',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    max: 100,
-                    title: {
-                        display: true,
-                        text: '% Agreeing'
-                    }
-                }
-            }
-        }
-    });
-    </script>
-</body>
-</html>
 </body>
 </html>

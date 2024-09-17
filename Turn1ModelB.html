@@ -2,117 +2,153 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Grocery Industry Visualizations</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body>
+    <title>Reaction Time Game</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
     <style>
-        .chart-container {
-            width: 100%;
-            height: 400px;
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            color: #333;
+        }
+        #gameArea {
+            text-align: center;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        #letterDisplay {
+            font-size: 4em;
+            margin: 20px 0;
+            color: #28a745;
+        }
+        #score, #timer, #level {
+            font-size: 1.2em;
+            margin: 10px 0;
+        }
+        .colorblind {
+            filter: contrast(150%);
+        }
+        .powerup {
+            background: gold;
+            padding: 5px 10px;
+            border-radius: 5px;
+            margin: 10px;
+            display: inline-block;
+        }
+        .menu button {
+            margin: 5px;
+            padding: 10px 20px;
+            font-size: 1em;
+            cursor: pointer;
         }
     </style>
-    <div class="container mt-5">
-        <h1 class="text-center">Grocery Industry Trends</h1>
-        <!-- Time Series Graph -->
-        <div id="timeSeriesGraph" class="mb-5"></div>
-        
-        <!-- Pie Chart -->
-        <div id="pieChart" class="mb-5"></div>
-        
-        <!-- Bar Chart -->
-        <div id="barChart"></div>
+</head>
+<body>
+    <div id="gameArea">
+        <div id="menu" class="menu">
+            <button onclick="startGame('easy')">Easy</button>
+            <button onclick="startGame('medium')">Medium</button>
+            <button onclick="startGame('hard')">Hard</button>
+            <label><input type="checkbox" id="colorblindMode"> Colorblind Mode</label>
+        </div>
+        <div id="game" style="display:none;">
+            <h1 id="letterDisplay"></h1>
+            <div id="score">Score: 0</div>
+            <div id="timer">Time: 1.5s</div>
+            <div id="level">Level: 1</div>
+            <div id="powerups"></div>
+            <div id="feedback" class="animate__animated"></div>
+        </div>
     </div>
-
+    
     <script>
-        document.addEventListener('DOMContentLoaded', (event) => {
-    const ctxTimeSeries = document.getElementById('timeSeriesGraph').getContext('2d');
-    const ctxPie = document.getElementById('pieChart').getContext('2d');
-    const ctxBar = document.getElementById('barChart').getContext('2d');
+    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    let gameInterval, currentLetter, score = 0, level = 1, timer = 1500, reactionTimes = [], correctAttempts = 0;
+    const gameArea = document.getElementById('gameArea');
+    const colorblindMode = document.getElementById('colorblindMode');
 
-    // Time Series Data for Convenience Value
-    new Chart(ctxTimeSeries, {
-        type: 'line',
-        data: {
-            labels: ['Past', 'Now'],
-            datasets: [{
-                label: 'Consumers Valuing Convenience',
-                data: [null, 52], // Assuming 'Past' data is not provided, hence null
-                borderColor: 'rgba(75, 192, 192, 1)',
-                fill: false
-            }]
-        },
-        options: {
-            responsive: true,
-            title: {
-                display: true,
-                text: 'Rise in Consumers Valuing Convenience'
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    max: 100,
-                    title: {
-                        display: true,
-                        text: 'Percentage'
-                    }
-                }
+    function startGame(difficulty) {
+        document.getElementById('menu').style.display = 'none';
+        document.getElementById('game').style.display = 'block';
+        switch(difficulty) {
+            case 'hard': timer = 2500; break;
+            case 'medium': timer = 2000; break;
+            default: timer = 1500;
+        }
+        newLetter();
+    }
+
+    function newLetter() {
+        currentLetter = difficulty === 'hard' ? letters[Math.floor(Math.random() * letters.length)] + letters[Math.floor(Math.random() * letters.length)] : letters[Math.floor(Math.random() * letters.length)];
+        document.getElementById('letterDisplay').textContent = currentLetter;
+        startTimer();
+    }
+
+    function startTimer() {
+        let timeLeft = timer / 1000;
+        const timerDisplay = document.getElementById('timer');
+        const countDown = setInterval(() => {
+            timeLeft -= 0.1;
+            timerDisplay.textContent = `Time: ${timeLeft.toFixed(1)}s`;
+            if (timeLeft <= 0) {
+                clearInterval(countDown);
+                gameFeedback('red', 'Time Up!');
+                setTimeout(newLetter, 1000);
             }
+        }, 100);
+    }
+
+    function gameFeedback(color, message) {
+        const feedback = document.getElementById('feedback');
+        feedback.textContent = message;
+        feedback.style.color = color;
+        feedback.className = `animate__animated animate__flash`;
+        feedback.addEventListener('animationend', () => {
+            feedback.className = '';
+        }, {once: true});
+    }
+
+    document.addEventListener('keypress', (e) => {
+        if (e.key.toUpperCase() === currentLetter.slice(-1)) { // Check only the last character for hard mode
+            clearInterval(gameInterval);
+            const reactionTime = timer - parseFloat(document.getElementById('timer').textContent) * 1000;
+            reactionTimes.push(reactionTime);
+            correctAttempts++;
+            score += difficulty === 'hard' ? 2 : 1;
+            updateScore();
+            gameFeedback('green', 'Correct!');
+            setTimeout(newLetter, 1000);
+        } else {
+            gameFeedback('red', 'Wrong!');
         }
     });
 
-    // Pie Chart for Convenience Seekers
-    new Chart(ctxPie, {
-        type: 'pie',
-        data: {
-            labels: ['Convenience Seekers', 'Others'],
-            datasets: [{
-                data: [23, 77], // 23% are convenience seekers
-                backgroundColor: ['#FF6384', '#36A2EB']
-            }]
-        },
-        options: {
-            responsive: true,
-            title: {
-                display: true,
-                text: 'Distribution of Convenience Seekers'
-            }
+    function updateScore() {
+        document.getElementById('score').textContent = `Score: ${score}`;
+        if (score % 10 === 0) levelUp();
+    }
+
+    function levelUp() {
+        level++;
+        document.getElementById('level').textContent = `Level: ${level}`;
+        // Here you could introduce new game mechanics or power-ups
+    }
+
+    colorblindMode.addEventListener('change', function() {
+        if (this.checked) {
+            gameArea.classList.add('colorblind');
+        } else {
+            gameArea.classList.remove('colorblind');
         }
     });
 
-    // Bar Chart for Grocers' Strategic Investments
-    // Note: The article does not provide specific data for this, so we'll use hypothetical data
-    new Chart(ctxBar, {
-        type: 'bar',
-        data: {
-            labels: ['Convenience', 'Quality', 'Low Prices', 'Sustainability'],
-            datasets: [{
-                label: 'Investment Focus',
-                data: [85, 70, 60, 50], // Hypothetical percentages
-                backgroundColor: 'rgba(54, 162, 235, 0.5)'
-            }]
-        },
-        options: {
-            responsive: true,
-            title: {
-                display: true,
-                text: "Grocers' Strategic Investment Focus"
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    title: {
-                        display: true,
-                        text: 'Investment Percentage'
-                    }
-                }
-            }
-        }
-    });
-});
+    // Power-ups and two-player mode would require additional logic here
     </script>
-
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </body>
 </html>
